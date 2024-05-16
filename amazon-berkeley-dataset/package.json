@@ -1,0 +1,14 @@
+{
+  "name": "abo-ingest",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@devflowinc/trieve-js-ts-client": "^0.8.2"
+  }
+}
