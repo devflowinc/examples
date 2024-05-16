@@ -51,3 +51,5 @@ Upload documents to Trieve
 ```bash
 bun run index.ts
 ```
+
+This example is explained in this [guide](https://docs.trieve.ai/guides/ecommerce).
