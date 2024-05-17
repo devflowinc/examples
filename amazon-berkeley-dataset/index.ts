@@ -111,6 +111,7 @@ function processLine(line: string) {
     tracking_id: item.item_id,
     tag_set: item.item_keywords?.map((kw) => kw.value),
     metadata,
+    image_urls: [ image_url ?? "" ],
     upsert_by_tracking_id: true,
   };
   return chunkData;

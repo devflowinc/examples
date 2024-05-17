@@ -9,6 +9,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@devflowinc/trieve-js-ts-client": "^0.8.2"
+    "@devflowinc/trieve-js-ts-client": "^0.8.5"
   }
 }
