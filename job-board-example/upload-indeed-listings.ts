@@ -1,10 +1,6 @@
 import * as fs from "fs";
 import { parse } from "csv-parse";
 
-import dotev from "dotenv";
-
-dotev.config();
-
 // Define the chunk structure
 interface Chunk {
   chunk_html: string;
