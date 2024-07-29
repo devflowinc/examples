@@ -1,13 +1,22 @@
 import * as fs from "fs";
-import * as readline from "readline";
-import * as path from "path";
 import { parse } from "csv-parse";
-import {
-  ChunkApi,
-  ChunkData,
-  Configuration,
-  CreateChunkData,
-} from "@devflowinc/trieve-js-ts-client";
+
+import dotev from "dotenv";
+
+dotev.config();
+
+// Define the chunk structure
+interface Chunk {
+  chunk_html: string;
+  link: string;
+  tracking_id: string;
+  tag_set: string[];
+  metadata: {
+    [key: string]: string;
+  };
+  time_stamp: string;
+  upsert_by_tracking_id: boolean;
+}
 
 // Define the data structure for your CSV data
 interface JobData {
@@ -56,13 +65,6 @@ async function parseCSV(filePath: string): Promise<JobData[]> {
 const trieveApiKey = process.env.TRIEVE_API_KEY ?? "";
 const trieveDatasetId = process.env.TRIEVE_DATASET_ID ?? "";
 
-const trieveApiConfig = new Configuration({
-  apiKey: trieveApiKey,
-  basePath: "https://api.trieve.ai",
-});
-
-const chunkApi = new ChunkApi(trieveApiConfig);
-
 // Function to transform JobData to a searchable string
 function jobToSearchableString(job: JobData): string {
   let searchableString = "";
@@ -71,7 +73,7 @@ function jobToSearchableString(job: JobData): string {
   const addField = (
     field: string | undefined,
     prefix: string = "",
-    postfix: string = "\n\n",
+    postfix: string = "\n\n"
   ) => {
     if (field) {
       searchableString += `${prefix}${field}${postfix}`;
@@ -104,7 +106,7 @@ function extractMetadata(job: JobData): any {
 async function processJobData(filePath: string) {
   const items = await parseCSV(filePath);
 
-  const createChunkData: CreateChunkData = items.map((item) => ({
+  const createChunkData = items.map((item) => ({
     chunk_html: jobToSearchableString(item),
     link: item["Apply Url"] ?? "",
     tracking_id: item["Uniq Id"] ?? "",
@@ -119,7 +121,7 @@ async function processJobData(filePath: string) {
   }));
 
   const chunkSize = 50;
-  const chunkedItems: CreateChunkData[] = [];
+  const chunkedItems: Chunk[][] = [];
   for (let i = 0; i < createChunkData.length; i += chunkSize) {
     const chunk = createChunkData.slice(i, i + chunkSize);
     chunkedItems.push(chunk);
@@ -128,7 +130,17 @@ async function processJobData(filePath: string) {
   for (const chunk of chunkedItems) {
     try {
       console.log(`Creating chunk `);
-      await chunkApi.createChunk(trieveDatasetId, chunk);
+      const options = {
+        method: "POST",
+        headers: {
+          "TR-Dataset": trieveDatasetId,
+          Authorization: trieveApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chunk),
+      };
+
+      await fetch("https://api.trieve.ai/api/chunk", options);
     } catch (error) {
       console.error(`Failed to create chunk`);
       console.error(error);
