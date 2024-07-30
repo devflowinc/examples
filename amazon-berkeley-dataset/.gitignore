@@ -10,6 +10,7 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+
 # Caches
 
 .cache
@@ -173,3 +174,8 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
+
+## fetching listings artifacts
+abo-listings.tar
+LICENSE-CC-BY-4.0.txt
+listings

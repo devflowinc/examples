@@ -12,8 +12,7 @@ tar xvf abo-listings.tar
 gzip -d listings/metadata/listings_*.json.gz
 ```
 
-This should extract multiple lines that have 
-
+This should extract multiple lines that have
 
 ### Image CSV Data
 
@@ -53,3 +52,7 @@ bun run index.ts
 ```
 
 This example is explained in this [guide](https://docs.trieve.ai/guides/ecommerce).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
