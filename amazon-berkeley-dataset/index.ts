@@ -1,12 +1,18 @@
 import { readdir } from "node:fs/promises";
-import {
-  ChunkApi,
-  Configuration,
-  type CreateChunkData,
-} from "@devflowinc/trieve-js-ts-client";
 import { resolve } from "path";
 import * as readline from "readline";
 import { createReadStream } from "fs";
+
+// Define the chunk structure
+interface Chunk {
+  chunk_html: string;
+  link: string;
+  tracking_id: string;
+  tag_set: string[];
+  metadata: Partial<Item>;
+  upsert_by_tracking_id: boolean;
+  image_urls?: string[];
+}
 
 interface LanguageTaggedValue {
   language_tag: string;
@@ -105,13 +111,13 @@ function processLine(line: string) {
   metadata.image_url = image_url;
   metadata.price = price;
 
-  const chunkData: CreateChunkData = {
+  const chunkData: Chunk = {
     chunk_html: searchableString.trim(),
     link: `https://${item.domain_name}/dp/${item.item_id}`,
     tracking_id: item.item_id,
     tag_set: item.item_keywords?.map((kw) => kw.value),
     metadata,
-    image_urls: [ image_url ?? "" ],
+    image_urls: [image_url ?? ""],
     upsert_by_tracking_id: true,
   };
   return chunkData;
@@ -151,16 +157,9 @@ if (imageHashMap == null) {
 const trieveApiKey = Bun.env.TRIEVE_API_KEY ?? "";
 const trieveDatasetId = Bun.env.TRIEVE_DATASET_ID ?? "";
 
-const trieveApiConfig = new Configuration({
-  apiKey: trieveApiKey,
-  basePath: "https://api.trieve.ai",
-});
-
-const chunkApi = new ChunkApi(trieveApiConfig);
-
 const directoryPath = "./listings/metadata/";
 
-const files = await readdir(directoryPath)
+const files = await readdir(directoryPath);
 
 for (const file of files) {
   const fullPath = resolve(directoryPath + file);
@@ -171,11 +170,11 @@ for (const file of files) {
     crlfDelay: Infinity,
   });
 
-  const items: CreateChunkData = [];
+  const items: Chunk[] = [];
 
   for await (const line of rl) {
     try {
-      const chunkData: CreateChunkData = processLine(line);
+      const chunkData: Chunk = processLine(line);
       items.push(chunkData);
     } catch (error) {
       console.error("Error parsing JSON from line:", error);
@@ -183,7 +182,7 @@ for (const file of files) {
   }
 
   const batchSize = 120;
-  const chunkedItems: CreateChunkData[] = [];
+  const chunkedItems: Chunk[][] = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const chunk = items.slice(i, i + batchSize);
     chunkedItems.push(chunk);
@@ -192,7 +191,17 @@ for (const file of files) {
   for (const chunk of chunkedItems) {
     try {
       console.log(`Creating chunk`);
-      await chunkApi.createChunk(trieveDatasetId, chunk);
+      const options = {
+        method: "POST",
+        headers: {
+          "TR-Dataset": trieveDatasetId,
+          Authorization: trieveApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chunk),
+      };
+
+      await fetch("https://api.trieve.ai/api/chunk", options);
     } catch (error) {
       console.error(`Failed to create chunk`);
       console.error(error);
